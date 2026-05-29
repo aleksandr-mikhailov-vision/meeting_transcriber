@@ -69,3 +69,20 @@ meeting_transcribator/
 - [ ] `uv run pytest` green.
 - [ ] code-reviewer pass; address findings.
 - [ ] `git init`, commit (recordings/outputs ignored), create **private** repo via `gh`, push.
+
+---
+
+## Addendum: multi-provider support (added later)
+
+Extended to choose between **OpenAI** and **Mistral (Voxtral)** at runtime.
+
+- New `src/meeting_transcribator/providers.py`: a `Provider` protocol plus
+  `OpenAIProvider` (`gpt-4o-transcribe`, key `OPENAI_API_KEY`) and `MistralProvider`
+  (`voxtral-mini-latest` via `mistralai.client.Mistral.audio.transcriptions.complete`,
+  key `MISTRAL_API_KEY`), registered in `PROVIDERS`.
+- `transcriber.py` takes `provider=` instead of a raw client; the ffmpeg chunking
+  pipeline is unchanged and shared (Voxtral handles long audio; chunks suit both).
+- CLI gains `--provider {openai,mistral}` (env `TRANSCRIBE_PROVIDER`); `--model`
+  default resolves to the selected provider's default; per-provider key guard.
+- Tests: `tests/test_providers.py` verifies each provider calls its SDK with the
+  right args and reads the response text (SDK clients faked — no network/key).

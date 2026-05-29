@@ -1,7 +1,8 @@
 # Meeting Transcribator
 
-Turn `.m4a` (and other audio) recordings into raw-text `.md` transcripts using the
-OpenAI transcription API. Pure backend — a CLI that Claude or a human can run.
+Turn `.m4a` (and other audio) recordings into raw-text `.md` transcripts using
+either the **OpenAI** or **Mistral (Voxtral)** transcription API. Pure backend — a
+CLI that Claude or a human can run.
 
 - **In:** audio files in `recordings/`
 - **Out:** one `.md` per recording in `outputs/` (raw transcript text, nothing else)
@@ -15,14 +16,14 @@ OpenAI transcription API. Pure backend — a CLI that Claude or a human can run.
 - [`uv`](https://docs.astral.sh/uv/) (already installed on this machine). It manages
   Python and all dependencies — including a **bundled ffmpeg** (`imageio-ffmpeg`), so
   you do **not** need Python or ffmpeg installed system-wide.
-- An OpenAI API key.
+- An API key for whichever provider you use: an **OpenAI** key, a **Mistral** key, or both.
 
 ## Setup (once)
 
 ```powershell
-# 1. Add your API key
+# 1. Add your API key(s)
 copy .env.example .env
-# then edit .env and set OPENAI_API_KEY=sk-...
+# then edit .env: set OPENAI_API_KEY=sk-... and/or MISTRAL_API_KEY=...
 
 # 2. Install dependencies (creates .venv, downloads Python if needed)
 uv sync
@@ -33,13 +34,16 @@ uv sync
 Put recordings in `recordings/`, then:
 
 ```powershell
-# Transcribe one file -> outputs/<name>.md
+# Transcribe one file -> outputs/<name>.md (OpenAI, the default provider)
 uv run transcribe recordings/board-meeting.m4a
 
 # Transcribe every recording that doesn't yet have a transcript
 uv run transcribe --all
 
-# Re-do everything, choose a cheaper model, hint the language
+# Use Mistral (Voxtral) instead
+uv run transcribe --all --provider mistral
+
+# Re-do everything, choose a specific model, hint the language
 uv run transcribe --all --overwrite --model gpt-4o-mini-transcribe --language en
 ```
 
@@ -50,20 +54,30 @@ uv run transcribe --all --overwrite --model gpt-4o-mini-transcribe --language en
 | `paths...` | — | Specific audio file(s) to transcribe |
 | `--all` | off | Transcribe all recordings in `recordings/` (skips ones already done) |
 | `--overwrite` | off | Re-transcribe even if a transcript exists |
-| `--model` | `gpt-4o-transcribe` | OpenAI model (`gpt-4o-transcribe`, `gpt-4o-mini-transcribe`, `whisper-1`) |
+| `--provider` | `openai` | `openai` or `mistral` |
+| `--model` | provider default | Model override (see below) |
 | `--language` | auto-detect | ISO-639-1 hint, e.g. `en`, `fr` |
 | `--recordings-dir` | `recordings` | Input folder |
 | `--outputs-dir` | `outputs` | Output folder |
 
-Defaults for `--model` / `--language` can also be set in `.env`
-(`TRANSCRIBE_MODEL`, `TRANSCRIBE_LANGUAGE`).
+Defaults can also be set in `.env` (`TRANSCRIBE_PROVIDER`, `TRANSCRIBE_MODEL`,
+`TRANSCRIBE_LANGUAGE`).
+
+**Default model per provider:**
+
+| Provider | Default model | Key | Other models you can pass |
+|----------|---------------|-----|---------------------------|
+| `openai` | `gpt-4o-transcribe` | `OPENAI_API_KEY` | `gpt-4o-mini-transcribe`, `whisper-1` |
+| `mistral` | `voxtral-mini-latest` | `MISTRAL_API_KEY` | other Voxtral variants |
 
 ## Cost & accuracy
 
-`gpt-4o-transcribe` gives the best accuracy (recommended for meetings);
+OpenAI's `gpt-4o-transcribe` gives the best accuracy (recommended for meetings);
 `gpt-4o-mini-transcribe` is cheaper; `whisper-1` is the cheapest, well-proven option.
-You pay OpenAI per minute of audio. Files are downsampled to 16 kHz mono before upload —
-no impact on transcription quality (the models do this internally anyway).
+Mistral's `voxtral-mini-latest` (Voxtral) is a strong alternative and can handle very
+long recordings. You pay the provider per minute of audio. Files are downsampled to
+16 kHz mono before upload — no impact on transcription quality (the models do this
+internally anyway).
 
 ## Development
 
@@ -78,7 +92,8 @@ recordings/   audio inputs (gitignored)
 outputs/      .md transcripts (gitignored)
 src/meeting_transcribator/
   audio.py        ffmpeg locate + normalize/chunk
-  transcriber.py  per-chunk OpenAI calls + concatenation
+  providers.py    OpenAI / Mistral provider implementations
+  transcriber.py  per-chunk transcription + concatenation
   cli.py          command-line interface
 tests/          pytest suite
 ```

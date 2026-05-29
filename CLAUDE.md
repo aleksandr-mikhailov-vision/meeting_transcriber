@@ -1,8 +1,8 @@
 # CLAUDE.md — operating notes for this repo
 
 This is a backend tool that transcribes audio recordings to raw-text `.md` files via
-the OpenAI API. You (Claude) are the primary driver: a human tells you what to
-transcribe, and you run the command.
+the OpenAI or Mistral (Voxtral) API. You (Claude) are the primary driver: a human tells
+you what to transcribe, and you run the command.
 
 ## How to transcribe
 
@@ -17,17 +17,21 @@ uv run transcribe --all
 ```
 
 - `--all` skips recordings that already have a transcript. Add `--overwrite` to redo them.
-- Default model is `gpt-4o-transcribe`. Use `--model gpt-4o-mini-transcribe` or
-  `--model whisper-1` if the user wants cheaper. Use `--language en` (or `fr`, etc.)
-  if the user tells you the meeting language.
+- Provider defaults to OpenAI (`gpt-4o-transcribe`). For Mistral, add `--provider mistral`
+  (default model `voxtral-mini-latest`). Pick provider based on what the user asks for
+  or which key is configured.
+- Use `--model ...` for a cheaper/specific model (`gpt-4o-mini-transcribe`, `whisper-1`,
+  other Voxtral variants). Use `--language en` (or `fr`, etc.) if the user tells you the
+  meeting language.
 - Output is the raw transcript only — no summaries or formatting added (by design).
 
 ## Setup / troubleshooting
 
 - Dependencies and Python are managed by `uv`. If a command fails with a missing
   package, run `uv sync` first.
-- Requires `OPENAI_API_KEY` in `.env` (see `.env.example`). If it's missing the CLI
-  exits with a clear message — ask the user to add the key to `.env`.
+- Requires the selected provider's key in `.env` (`OPENAI_API_KEY` or `MISTRAL_API_KEY`;
+  see `.env.example`). If it's missing the CLI exits with a clear message — ask the user
+  to add the key to `.env`.
 - ffmpeg is bundled via `imageio-ffmpeg`; nothing to install system-wide.
 - Run the tests with `uv run pytest`.
 
