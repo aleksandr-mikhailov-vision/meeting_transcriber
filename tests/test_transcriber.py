@@ -10,6 +10,7 @@ class FakeProvider:
     name = "fake"
     default_model = "fake-model"
     env_key = "FAKE_KEY"
+    chunk_seconds = 300
 
     def __init__(self):
         self.calls = []
@@ -35,7 +36,10 @@ def test_transcribe_chunks_joins_in_order(tmp_path):
 
 
 def test_transcribe_file_writes_md(tmp_path, monkeypatch):
-    def fake_chunk_audio(src, workdir):
+    seen = {}
+
+    def fake_chunk_audio(src, workdir, *, max_seconds=None):
+        seen["max_seconds"] = max_seconds
         out = []
         for i in range(2):
             c = Path(workdir) / f"chunk_{i:04d}.mp3"
@@ -54,3 +58,21 @@ def test_transcribe_file_writes_md(tmp_path, monkeypatch):
 
     assert result == dest
     assert dest.read_text(encoding="utf-8") == "text-chunk_0000\n\ntext-chunk_0001\n"
+    # Falls back to the provider's chunk_seconds when not given explicitly.
+    assert seen["max_seconds"] == 300
+
+
+def test_transcribe_file_chunk_seconds_override(tmp_path, monkeypatch):
+    seen = {}
+
+    def fake_chunk_audio(src, workdir, *, max_seconds=None):
+        seen["max_seconds"] = max_seconds
+        c = Path(workdir) / "chunk_0000.mp3"
+        c.write_bytes(b"x")
+        return [c]
+
+    monkeypatch.setattr(transcriber, "chunk_audio", fake_chunk_audio)
+    src = tmp_path / "rec.m4a"
+    src.write_bytes(b"x")
+    transcribe_file(src, tmp_path / "o.md", provider=FakeProvider(), model="m", chunk_seconds=120)
+    assert seen["max_seconds"] == 120

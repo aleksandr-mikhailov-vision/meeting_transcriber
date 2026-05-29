@@ -57,8 +57,15 @@ uv run transcribe --all --overwrite --model gpt-4o-mini-transcribe --language en
 | `--provider` | `openai` | `openai` or `mistral` |
 | `--model` | provider default | Model override (see below) |
 | `--language` | auto-detect | ISO-639-1 hint, e.g. `en`, `fr` |
+| `--chunk-seconds` | provider-specific | Per-chunk audio length (advanced; see below) |
 | `--recordings-dir` | `recordings` | Input folder |
 | `--outputs-dir` | `outputs` | Output folder |
+
+> **Why chunk length is provider-specific:** `gpt-4o-transcribe` silently truncates
+> its output on long audio, so the OpenAI provider defaults to short (5-minute)
+> chunks to keep every request under that cap. Mistral Voxtral handles long audio
+> without truncating, so it uses 15-minute chunks (fewer requests). Override with
+> `--chunk-seconds` if needed.
 
 Defaults can also be set in `.env` (`TRANSCRIBE_PROVIDER`, `TRANSCRIBE_MODEL`,
 `TRANSCRIBE_LANGUAGE`).

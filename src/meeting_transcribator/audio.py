@@ -21,10 +21,11 @@ MAX_CHUNK_BYTES = 24 * 1024 * 1024
 # even a fraction of a second of speech is comfortably larger.
 _MIN_CHUNK_BYTES = 1024
 
-# Segment length. Two ceilings apply per chunk: the 25 MB byte cap above AND the
-# transcription model's max audio *duration* per request (gpt-4o-transcribe caps
-# around 1500 s). Keep both segment values well under ~1500 s — do not raise them
-# past that to reduce upload count, or requests will be rejected on length.
+# Fallback segment length when the caller doesn't specify one. Two ceilings apply
+# per chunk: the 25 MB byte cap above AND the model's behaviour on long audio —
+# gpt-4o-transcribe silently TRUNCATES its output on long chunks, so the OpenAI
+# provider asks for short chunks (see providers.py `chunk_seconds`). These module
+# defaults are only used when max_seconds is None. Keep them well under ~1500 s.
 # mp3 @ 16 kHz mono 32 kbps ≈ 240 KB/min, so 15 min ≈ 3.6 MB. WAV pcm_s16le @
 # 16 kHz mono ≈ 1.92 MB/min, so 10 min ≈ 19.2 MB (under the byte limit, with margin).
 _MP3_SEGMENT_SECONDS = 900
@@ -67,11 +68,15 @@ def _run_ffmpeg(args: list[str]) -> None:
         )
 
 
-def chunk_audio(src: str | Path, workdir: str | Path) -> list[Path]:
+def chunk_audio(
+    src: str | Path, workdir: str | Path, *, max_seconds: int | None = None
+) -> list[Path]:
     """Normalize ``src`` to 16 kHz mono and split it into ordered chunks in
     ``workdir``. Returns the chunk paths sorted by index (chronological order).
 
-    Each chunk is a complete, decodable audio file under ``MAX_CHUNK_BYTES``.
+    ``max_seconds`` sets the per-chunk length (callers pass the provider/model's
+    safe value); when None, a codec-appropriate default is used. Each chunk is a
+    complete, decodable audio file under ``MAX_CHUNK_BYTES``.
     """
     src = Path(src)
     workdir = Path(workdir)
@@ -80,9 +85,10 @@ def chunk_audio(src: str | Path, workdir: str | Path) -> list[Path]:
         raise FileNotFoundError(f"Audio file not found: {src}")
 
     if _has_mp3_encoder():
-        ext, codec, seg = "mp3", ["-c:a", "libmp3lame", "-b:a", "32k"], _MP3_SEGMENT_SECONDS
+        ext, codec, default_seg = "mp3", ["-c:a", "libmp3lame", "-b:a", "32k"], _MP3_SEGMENT_SECONDS
     else:
-        ext, codec, seg = "wav", ["-c:a", "pcm_s16le"], _WAV_SEGMENT_SECONDS
+        ext, codec, default_seg = "wav", ["-c:a", "pcm_s16le"], _WAV_SEGMENT_SECONDS
+    seg = max_seconds if max_seconds else default_seg
 
     pattern = workdir / f"chunk_%04d.{ext}"
     _run_ffmpeg(

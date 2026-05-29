@@ -24,6 +24,9 @@ uv run transcribe --all
   other Voxtral variants). Use `--language en` (or `fr`, etc.) if the user tells you the
   meeting language.
 - Output is the raw transcript only — no summaries or formatting added (by design).
+- Chunk length is provider-specific (OpenAI uses short 5-min chunks because
+  `gpt-4o-transcribe` truncates long audio; Mistral uses 15-min chunks). Override
+  with `--chunk-seconds` only if you have a reason to.
 
 ## Setup / troubleshooting
 

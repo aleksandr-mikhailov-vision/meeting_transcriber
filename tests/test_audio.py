@@ -5,7 +5,6 @@ import subprocess
 
 import pytest
 
-from meeting_transcribator import audio
 from meeting_transcribator.audio import MAX_CHUNK_BYTES, chunk_audio, get_ffmpeg
 
 
@@ -31,15 +30,12 @@ def _make_tone(path, seconds):
     )
 
 
-def test_chunk_audio_splits_long_recording(tmp_path, monkeypatch):
+def test_chunk_audio_splits_long_recording(tmp_path):
     src = tmp_path / "tone.m4a"
     _make_tone(src, seconds=65)
 
-    # Force short segments so a 65 s tone yields multiple chunks regardless of codec.
-    monkeypatch.setattr(audio, "_MP3_SEGMENT_SECONDS", 30)
-    monkeypatch.setattr(audio, "_WAV_SEGMENT_SECONDS", 30)
-
-    chunks = chunk_audio(src, tmp_path / "work")
+    # 30 s segments so a 65 s tone yields multiple chunks regardless of codec.
+    chunks = chunk_audio(src, tmp_path / "work", max_seconds=30)
 
     assert len(chunks) >= 2, "65 s at 30 s segments should produce multiple chunks"
     assert chunks == sorted(chunks), "chunks must be in chronological order"

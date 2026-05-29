@@ -37,14 +37,20 @@ def transcribe_file(
     provider: Provider,
     model: str,
     language: str | None = None,
+    chunk_seconds: int | None = None,
     on_progress: Callable[[int, int], None] | None = None,
 ) -> Path:
-    """Transcribe ``src`` and write the raw transcript text to ``dest`` (.md)."""
+    """Transcribe ``src`` and write the raw transcript text to ``dest`` (.md).
+
+    ``chunk_seconds`` overrides the per-chunk audio length; when None the
+    provider's own ``chunk_seconds`` is used.
+    """
     src = Path(src)
     dest = Path(dest)
     dest.parent.mkdir(parents=True, exist_ok=True)
+    seconds = chunk_seconds or getattr(provider, "chunk_seconds", None)
     with tempfile.TemporaryDirectory(prefix="transcribe_") as tmp:
-        chunks = chunk_audio(src, tmp)
+        chunks = chunk_audio(src, tmp, max_seconds=seconds)
         text = transcribe_chunks(
             chunks, provider=provider, model=model, language=language, on_progress=on_progress
         )

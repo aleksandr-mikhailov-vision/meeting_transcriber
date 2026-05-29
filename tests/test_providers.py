@@ -33,6 +33,12 @@ def test_registry_has_both_providers():
     assert PROVIDERS["mistral"].default_model == "voxtral-mini-latest"
 
 
+def test_openai_uses_short_chunks_to_avoid_truncation():
+    # gpt-4o-transcribe truncates long audio, so OpenAI must chunk shorter than Mistral.
+    assert PROVIDERS["openai"].chunk_seconds <= 360
+    assert PROVIDERS["openai"].chunk_seconds < PROVIDERS["mistral"].chunk_seconds
+
+
 def test_openai_provider_calls_create_with_text_format(tmp_path):
     audio = tmp_path / "chunk_0000.mp3"
     audio.write_bytes(b"x")

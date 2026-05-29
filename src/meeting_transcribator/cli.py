@@ -81,6 +81,13 @@ def _build_parser() -> argparse.ArgumentParser:
         help="ISO-639-1 language hint (e.g. en, fr). Optional; improves accuracy.",
     )
     parser.add_argument(
+        "--chunk-seconds",
+        type=int,
+        default=(int(os.environ["TRANSCRIBE_CHUNK_SECONDS"]) if os.environ.get("TRANSCRIBE_CHUNK_SECONDS") else None),
+        help="Per-chunk audio length. Default is provider-specific "
+        "(openai uses short chunks to avoid gpt-4o-transcribe truncation).",
+    )
+    parser.add_argument(
         "--recordings-dir", type=Path, default=DEFAULT_RECORDINGS, help="Input folder (default: recordings)."
     )
     parser.add_argument(
@@ -135,7 +142,8 @@ def main(argv: list[str] | None = None) -> int:
 
     provider = _make_provider(args.provider)
     model = args.model or provider.default_model
-    print(f"Provider: {provider.name}  Model: {model}")
+    chunk_seconds = args.chunk_seconds or provider.chunk_seconds
+    print(f"Provider: {provider.name}  Model: {model}  Chunk: {chunk_seconds}s")
 
     failures = 0
     used: set[Path] = set()
@@ -154,6 +162,7 @@ def main(argv: list[str] | None = None) -> int:
                 provider=provider,
                 model=model,
                 language=args.language,
+                chunk_seconds=chunk_seconds,
                 on_progress=lambda c, total: print(f"    chunk {c}/{total}...", flush=True),
             )
             print(f"    done: {dest}")

@@ -14,6 +14,7 @@ class Provider(Protocol):
     name: str
     default_model: str
     env_key: str
+    chunk_seconds: int  # safe per-chunk audio length for this provider
 
     def transcribe(self, path: Path, *, model: str, language: str | None) -> str:
         """Transcribe a single audio chunk and return its raw text."""
@@ -24,6 +25,10 @@ class OpenAIProvider:
     name = "openai"
     default_model = "gpt-4o-transcribe"
     env_key = "OPENAI_API_KEY"
+    # gpt-4o-transcribe silently truncates its output on long audio, dropping the
+    # tail of the chunk. Short chunks keep each request's output under that cap.
+    # (whisper-1 doesn't truncate, but this length is safe for it too.)
+    chunk_seconds = 300
 
     def __init__(self, client=None):
         if client is None:
@@ -47,6 +52,9 @@ class MistralProvider:
     # Voxtral. Override with --model for other Voxtral variants.
     default_model = "voxtral-mini-latest"
     env_key = "MISTRAL_API_KEY"
+    # Voxtral handles long audio without truncating, so use larger chunks (fewer
+    # requests, fewer split points where a word can be lost at a boundary).
+    chunk_seconds = 900
 
     def __init__(self, client=None):
         if client is None:
