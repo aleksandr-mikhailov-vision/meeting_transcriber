@@ -1,0 +1,31 @@
+# Sensitive content — never commit recordings or transcripts
+/recordings/*
+!/recordings/.gitkeep
+/outputs/*
+!/outputs/.gitkeep
+
+# Safety net: never commit audio anywhere in the tree, even loose in the root
+*.m4a
+*.mp3
+*.mp4
+*.wav
+*.webm
+*.flac
+*.ogg
+*.oga
+*.mpga
+*.mpeg
+
+# Secrets — keep only the example template
+.env
+.env.*
+!.env.example
+
+# Python / uv
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+build/
+dist/
