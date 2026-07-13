@@ -1,0 +1,15 @@
+{
+  "VsCodeTaskButtons.showCounter": false,
+  "VsCodeTaskButtons.tasks": [
+    {
+      "label": "$(megaphone) FR → Mistral",
+      "task": "Transcribe: French (Mistral)",
+      "tooltip": "Transcribe new recordings/ as French via Mistral Voxtral"
+    },
+    {
+      "label": "$(megaphone) EN/other → OpenAI",
+      "task": "Transcribe: English/other (OpenAI)",
+      "tooltip": "Transcribe new recordings/ via OpenAI gpt-4o (auto-detect language)"
+    }
+  ]
+}

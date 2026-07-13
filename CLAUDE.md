@@ -17,9 +17,10 @@ uv run transcribe --all
 ```
 
 - `--all` skips recordings that already have a transcript. Add `--overwrite` to redo them.
-- Provider defaults to OpenAI (`gpt-4o-transcribe`). For Mistral, add `--provider mistral`
-  (default model `voxtral-mini-latest`). Pick provider based on what the user asks for
-  or which key is configured.
+- **Provider rule:** mostly-French audio → Mistral (`--provider mistral`, Voxtral);
+  English or any other language → OpenAI (`--provider openai`, the default
+  `gpt-4o-transcribe`). This mirrors the VS Code buttons below. Override if the user
+  says otherwise or only one key is configured.
 - Use `--model ...` for a cheaper/specific model (`gpt-4o-mini-transcribe`, `whisper-1`,
   other Voxtral variants). Use `--language en` (or `fr`, etc.) if the user tells you the
   meeting language.
@@ -27,6 +28,20 @@ uv run transcribe --all
 - Chunk length is provider-specific (OpenAI uses short 5-min chunks because
   `gpt-4o-transcribe` truncates long audio; Mistral uses 15-min chunks). Override
   with `--chunk-seconds` only if you have a reason to.
+
+## Transcribe from VS Code (manual, no Claude)
+
+For running it yourself: drop a file into `recordings/`, then click a status-bar button.
+Two buttons (from `.vscode/`), matching the provider rule above:
+
+- **🎙 FR → Mistral** — `uv run transcribe --all --provider mistral --language fr`
+- **🎙 EN/other → OpenAI** — `uv run transcribe --all --provider openai` (auto-detect)
+
+Both transcribe every not-yet-done file in `recordings/` and write to `outputs/`; progress
+shows in the integrated terminal. The buttons need the `spencerwmiles.vscode-task-buttons`
+extension (VS Code prompts to install it via `.vscode/extensions.json`). Without the
+extension the same two tasks are reachable from **Terminal → Run Task**. To re-do an
+existing transcript, add `--overwrite` (ask Claude, or run the task manually).
 
 ## Setup / troubleshooting
 
@@ -43,3 +58,16 @@ uv run transcribe --all
 `recordings/` and `outputs/` are gitignored on purpose (corporate meeting content).
 Never force-add files from those folders, and never paste transcript contents into
 commits, PRs, or anywhere external.
+
+## Internal structure
+
+- `src/meeting_transcribator/` — the package: `audio.py` (ffmpeg locate + normalize/chunk),
+  `providers.py` (OpenAI/Mistral), `transcriber.py` (chunk → transcribe → stitch),
+  `cli.py` (the `transcribe` command).
+- `tests/` — pytest suite (`uv run pytest`).
+- `recordings/` — audio inputs (gitignored). `outputs/` — `.md` transcripts (gitignored).
+- `.vscode/` — the transcribe buttons (tasks + button config + extension recommendation).
+- `.claude/` — Claude Code settings and skills. The `sync-template` skill re-syncs this
+  repo's structure/conventions with the canonical `example-project` template; this project
+  deliberately keeps only a lean subset of it (see the skill for what it omits and why).
+- `docs/ai_execution_plans/` — plans written for/by Claude.

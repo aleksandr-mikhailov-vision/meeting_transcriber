@@ -1,0 +1,21 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Transcribe: French (Mistral)",
+      "type": "shell",
+      "command": "uv run transcribe --all --provider mistral --language fr",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "detail": "Transcribe new recordings/ files as French via Mistral Voxtral -> outputs/"
+    },
+    {
+      "label": "Transcribe: English/other (OpenAI)",
+      "type": "shell",
+      "command": "uv run transcribe --all --provider openai",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "detail": "Transcribe new recordings/ files via OpenAI gpt-4o (auto-detect language) -> outputs/"
+    }
+  ]
+}

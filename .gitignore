@@ -21,6 +21,10 @@
 .env.*
 !.env.example
 
+# Machine-specific — never commit
+CLAUDE.local.md
+.claude/settings.local.json
+
 # Python / uv
 .venv/
 __pycache__/

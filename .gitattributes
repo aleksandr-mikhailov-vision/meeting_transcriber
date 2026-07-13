@@ -1,0 +1,27 @@
+# Normalize line endings: LF in the repo, checked out per-platform.
+# Kills the "LF will be replaced by CRLF" warning noise on Windows.
+* text=auto eol=lf
+
+# Scripts that must stay CRLF for their interpreter
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary assets: never touch line endings or try to diff/merge as text
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.xlsx binary
+*.xls binary
+*.db binary
+*.ico binary
+
+# Audio recordings are binary (they are gitignored, but be safe anyway)
+*.m4a binary
+*.mp3 binary
+*.mp4 binary
+*.wav binary
+*.flac binary
+*.ogg binary

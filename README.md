@@ -47,6 +47,20 @@ uv run transcribe --all --provider mistral
 uv run transcribe --all --overwrite --model gpt-4o-mini-transcribe --language en
 ```
 
+### One-click from VS Code
+
+Prefer not to touch the command line? Drop your file into `recordings/`, then click a
+button in the VS Code status bar:
+
+- **🎙 FR → Mistral** — French audio, transcribed with Mistral (Voxtral).
+- **🎙 EN/other → OpenAI** — English or any other language, transcribed with OpenAI `gpt-4o`.
+
+Each button transcribes every recording that doesn't have a transcript yet and writes the
+result to `outputs/`, with live progress in the integrated terminal. The buttons come from
+the **Task Buttons** extension (`spencerwmiles.vscode-task-buttons`) — VS Code offers to
+install it the first time you open the project (`.vscode/extensions.json`). Without the
+extension, the same two entries are available under **Terminal → Run Task**.
+
 ### Options
 
 | Flag | Default | Meaning |
@@ -103,4 +117,6 @@ src/meeting_transcribator/
   transcriber.py  per-chunk transcription + concatenation
   cli.py          command-line interface
 tests/          pytest suite
+.vscode/        the two transcribe buttons (tasks + button config)
+.claude/        Claude Code settings + the sync-template skill
 ```
