@@ -27,7 +27,14 @@ copy .env.example .env
 
 # 2. Install dependencies (creates .venv, downloads Python if needed)
 uv sync
+
+# 3. (Optional) Install the VS Code extension for the one-click buttons
+code --install-extension spencerwmiles.vscode-task-buttons
 ```
+
+Step 3 is only needed for the status-bar buttons (see [One-click from VS Code](#one-click-from-vs-code)).
+VS Code also offers to install it automatically the first time you open the project. After
+installing, reload the window (`Ctrl+Shift+P` → "Reload Window") for the buttons to appear.
 
 ## Usage
 
