@@ -22,10 +22,12 @@ on a sync** unless the user asks — their absence is a choice, not drift:
 - `docs/architecture`, `docs/data-model`, `docs/technical-documentation`, `docs/plans`
   and per-folder `CLAUDE.md` for every folder — the root `CLAUDE.md` covers it.
 - tests split into `unit/integration/llm` — the flat `tests/` suite is enough here.
+- `.vscode/` editor task buttons — manual runs go through Claude or the terminal
+  (`uv run transcribe ...`), not editor buttons.
 
 What this project DOES track with the template: `.gitattributes`, `.editorconfig`,
-`.gitignore` hygiene, `.claude/` (settings + skills), `.vscode/`, `.env.example`, the
-root `CLAUDE.md` section structure, and the `README.md` skeleton.
+`.gitignore` hygiene, `.claude/` (settings + skills), `.env.example`, the root
+`CLAUDE.md` section structure, and the `README.md` skeleton.
 
 ## Locate the template
 
