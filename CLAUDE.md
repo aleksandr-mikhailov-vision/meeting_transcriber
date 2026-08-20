@@ -51,7 +51,4 @@ commits, PRs, or anywhere external.
   `cli.py` (the `transcribe` command).
 - `tests/` — pytest suite (`uv run pytest`).
 - `recordings/` — audio inputs (gitignored). `outputs/` — `.md` transcripts (gitignored).
-- `.claude/` — Claude Code settings and skills. The `sync-template` skill re-syncs this
-  repo's structure/conventions with the canonical `example-project` template; this project
-  deliberately keeps only a lean subset of it (see the skill for what it omits and why).
-- `docs/ai_execution_plans/` — plans written for/by Claude.
+- `.claude/` and `docs/ai_execution_plans/` — local-only working files (gitignored).
