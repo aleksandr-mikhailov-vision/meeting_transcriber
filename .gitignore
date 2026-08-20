@@ -21,9 +21,10 @@
 .env.*
 !.env.example
 
-# Machine-specific — never commit
+# Machine-specific / internal — never commit
 CLAUDE.local.md
-.claude/settings.local.json
+.claude/
+docs/ai_execution_plans/
 
 # Python / uv
 .venv/
