@@ -1,107 +1,109 @@
 # Meeting Transcribator
 
-Turn `.m4a` (and other audio) recordings into raw-text `.md` transcripts using
-either the **OpenAI** or **Mistral (Voxtral)** transcription API. Pure backend — a
-CLI that Claude or a human can run.
+Turns audio recordings of meetings into plain-text transcripts. You drop audio files
+into a folder, run one command, and get one `.md` file per recording containing the
+raw transcript: no summaries, no formatting, just what was said.
 
-- **In:** audio files in `recordings/`
-- **Out:** one `.md` per recording in `outputs/` (raw transcript text, nothing else)
-- Long meetings are handled automatically: audio is downmixed to 16 kHz mono and
-  split into chunks under OpenAI's 25 MB limit, transcribed, then stitched together.
-- **Privacy:** both `recordings/` and `outputs/` are gitignored — recordings and
-  transcripts never get committed.
+It works on long recordings (hours), and handles English, French and other languages
+via the OpenAI or Mistral transcription APIs.
 
-## Prerequisites
+**In:** audio files (`.m4a`, `.mp3`, `.wav`, `.mp4`, ...) placed in `recordings/`
+**Out:** one `.md` transcript per file in `outputs/`
 
-- [`uv`](https://docs.astral.sh/uv/) (already installed on this machine). It manages
-  Python and all dependencies — including a **bundled ffmpeg** (`imageio-ffmpeg`), so
-  you do **not** need Python or ffmpeg installed system-wide.
-- An API key for whichever provider you use: an **OpenAI** key, a **Mistral** key, or both.
+Your recordings and transcripts stay on your machine: both folders are gitignored, so
+they are never committed or shared.
 
-## Setup (once)
+## Setup (once, about 5 minutes)
 
-```powershell
-# 1. Add your API key(s)
-copy .env.example .env
-# then edit .env: set OPENAI_API_KEY=sk-... and/or MISTRAL_API_KEY=...
+**1. Install `uv`.** It handles Python, all dependencies and audio processing for you,
+so there is nothing else to install.
 
-# 2. Install dependencies (creates .venv, downloads Python if needed)
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh      # macOS / Linux
+```
+
+On Windows, run `powershell -c "irm https://astral.sh/uv/install.ps1 | iex"` instead.
+
+**2. Get an API key.** You need an account with one of the two providers, and you pay
+them per minute of audio transcribed.
+
+- OpenAI (best accuracy, use for English and most languages): create a key at
+  [platform.openai.com/api-keys](https://platform.openai.com/api-keys).
+- Mistral (use for mostly-French audio): create a key at
+  [console.mistral.ai](https://console.mistral.ai/).
+
+One key is enough. Get both if you record in both English and French.
+
+**3. Put the key in a file named `.env`.**
+
+```bash
+cp .env.example .env
+```
+
+Then open `.env` in any text editor and paste your key after the `=` sign:
+
+```
+OPENAI_API_KEY=sk-...
+MISTRAL_API_KEY=...
+```
+
+**4. Install the project.**
+
+```bash
 uv sync
 ```
 
-## Usage
+## Use it
 
-Put recordings in `recordings/`, then:
+Copy your recordings into the `recordings/` folder, then run:
 
-```powershell
-# Transcribe one file -> outputs/<name>.md (OpenAI, the default provider)
-uv run transcribe recordings/board-meeting.m4a
-
-# Transcribe every recording that doesn't yet have a transcript
+```bash
+# Transcribe everything that doesn't have a transcript yet
 uv run transcribe --all
 
-# Use Mistral (Voxtral) instead
-uv run transcribe --all --provider mistral
+# Or just one file
+uv run transcribe recordings/board-meeting.m4a
 
-# Re-do everything, choose a specific model, hint the language
-uv run transcribe --all --overwrite --model gpt-4o-mini-transcribe --language en
+# For mostly-French audio, use Mistral
+uv run transcribe --all --provider mistral
 ```
 
-### Options
+Transcripts appear in `outputs/`, named after the recording. Files that already have a
+transcript are skipped, so you can safely re-run `--all` after adding new recordings.
 
-| Flag | Default | Meaning |
-|------|---------|---------|
-| `paths...` | — | Specific audio file(s) to transcribe |
-| `--all` | off | Transcribe all recordings in `recordings/` (skips ones already done) |
-| `--overwrite` | off | Re-transcribe even if a transcript exists |
-| `--provider` | `openai` | `openai` or `mistral` |
-| `--model` | provider default | Model override (see below) |
-| `--language` | auto-detect | ISO-639-1 hint, e.g. `en`, `fr` |
-| `--chunk-seconds` | provider-specific | Per-chunk audio length (advanced; see below) |
-| `--recordings-dir` | `recordings` | Input folder |
-| `--outputs-dir` | `outputs` | Output folder |
+Long recordings take a while, because the audio is split into chunks and sent to the
+API one by one. Leave the command running until it prints the output path.
 
-> **Why chunk length is provider-specific:** `gpt-4o-transcribe` silently truncates
-> its output on long audio, so the OpenAI provider defaults to short (5-minute)
-> chunks to keep every request under that cap. Mistral Voxtral handles long audio
-> without truncating, so it uses 15-minute chunks (fewer requests). Override with
-> `--chunk-seconds` if needed.
+## Useful options
 
-Defaults can also be set in `.env` (`TRANSCRIBE_PROVIDER`, `TRANSCRIBE_MODEL`,
-`TRANSCRIBE_LANGUAGE`).
+| Flag | What it does |
+|------|--------------|
+| `--all` | Transcribe every recording in `recordings/` that isn't done yet |
+| `--overwrite` | Redo files that already have a transcript |
+| `--provider mistral` | Use Mistral instead of OpenAI (better for French) |
+| `--language fr` | Tell it the meeting language (`en`, `fr`, ...), improves accuracy |
+| `--model whisper-1` | Use a cheaper model (see below) |
 
-**Default model per provider:**
+Run `uv run transcribe --help` for the full list.
 
-| Provider | Default model | Key | Other models you can pass |
-|----------|---------------|-----|---------------------------|
-| `openai` | `gpt-4o-transcribe` | `OPENAI_API_KEY` | `gpt-4o-mini-transcribe`, `whisper-1` |
-| `mistral` | `voxtral-mini-latest` | `MISTRAL_API_KEY` | other Voxtral variants |
+**Models:** the default is OpenAI's `gpt-4o-transcribe`, the most accurate option for
+meetings. `gpt-4o-mini-transcribe` and `whisper-1` cost less. Mistral defaults to
+`voxtral-mini-latest`.
 
-## Cost & accuracy
+## If something goes wrong
 
-OpenAI's `gpt-4o-transcribe` gives the best accuracy (recommended for meetings);
-`gpt-4o-mini-transcribe` is cheaper; `whisper-1` is the cheapest, well-proven option.
-Mistral's `voxtral-mini-latest` (Voxtral) is a strong alternative and can handle very
-long recordings. You pay the provider per minute of audio. Files are downsampled to
-16 kHz mono before upload — no impact on transcription quality (the models do this
-internally anyway).
+- **"OPENAI_API_KEY is not set"**. The `.env` file is missing, sits in the wrong
+  folder, or the key line is empty. It must sit next to this README.
+- **A command isn't found**. `uv` isn't installed or isn't on your PATH; reopen your
+  terminal after installing it.
+- **Anything else fails oddly**. Run `uv sync` again to repair the installation.
 
-## Development
+## For developers
 
-```powershell
+```bash
 uv run pytest
 ```
 
-## Project layout
-
-```
-recordings/   audio inputs (gitignored)
-outputs/      .md transcripts (gitignored)
-src/meeting_transcribator/
-  audio.py        ffmpeg locate + normalize/chunk
-  providers.py    OpenAI / Mistral provider implementations
-  transcriber.py  per-chunk transcription + concatenation
-  cli.py          command-line interface
-tests/          pytest suite
-.claude/        Claude Code settings + the sync-template skill
-```
+The package lives in `src/meeting_transcribator/`: `audio.py` (normalise and split
+audio), `providers.py` (OpenAI / Mistral API calls), `transcriber.py` (transcribe and
+stitch chunks), `cli.py` (the `transcribe` command).
